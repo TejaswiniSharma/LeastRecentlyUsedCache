@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Round2.Controllers;
 
@@ -16,6 +17,7 @@ public record StatsResponse(int CurrentCount, int Capacity);
 
 [ApiController]
 [Route("api/cache")]
+[EnableRateLimiting("per-client")]   // token bucket, keyed per API key
 public class LRUCacheController : ControllerBase
 {
     private readonly LRUCache _cache;
@@ -27,9 +29,8 @@ public class LRUCacheController : ControllerBase
 
     /// <summary>
     /// POST /api/cache/add
-    /// Body: { "key": 42 }
     /// Adds the key to the cache (evicts LRU if at capacity).
-    /// AddItemAsync returns the timestamp directly — no second Get call needed.
+    /// Returns 429 if the caller's token bucket and queue are both full.
     /// </summary>
     [HttpPost("add")]
     public async Task<ActionResult<AddResponse>> Add([FromBody] AddRequest request)
@@ -42,6 +43,7 @@ public class LRUCacheController : ControllerBase
     /// GET /api/cache/{key}
     /// Returns the timestamp for the key and promotes it to MRU.
     /// Returns 404 if the key is not in the cache.
+    /// Returns 429 if the caller's token bucket and queue are both full.
     /// </summary>
     [HttpGet("{key:int}")]
     public async Task<ActionResult<GetResponse>> Get(int key)

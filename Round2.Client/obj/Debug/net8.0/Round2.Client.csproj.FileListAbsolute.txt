@@ -26,3 +26,4 @@
 /Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2.Client/obj/Debug/net8.0/Round2.Client.pdb
 /Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2.Client/obj/Debug/net8.0/Round2.Client.genruntimeconfig.cache
 /Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2.Client/obj/Debug/net8.0/ref/Round2.Client.dll
+/Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2.Client/obj/Debug/net8.0/Round2.Client.sourcelink.json
