@@ -44,3 +44,4 @@
 /Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2/obj/Debug/net8.0/Round2.pdb
 /Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2/obj/Debug/net8.0/Round2.genruntimeconfig.cache
 /Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2/obj/Debug/net8.0/ref/Round2.dll
+/Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2/obj/Debug/net8.0/Round2.sourcelink.json

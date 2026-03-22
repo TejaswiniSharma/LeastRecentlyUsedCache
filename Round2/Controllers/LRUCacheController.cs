@@ -29,15 +29,12 @@ public class LRUCacheController : ControllerBase
     /// POST /api/cache/add
     /// Body: { "key": 42 }
     /// Adds the key to the cache (evicts LRU if at capacity).
+    /// AddItemAsync returns the timestamp directly — no second Get call needed.
     /// </summary>
     [HttpPost("add")]
-    public ActionResult<AddResponse> Add([FromBody] AddRequest request)
+    public async Task<ActionResult<AddResponse>> Add([FromBody] AddRequest request)
     {
-        _cache.AddItem(request.Key);
-
-        // Read back the timestamp that was just stored
-        DateTime timestamp = _cache.Get(request.Key)!.Value;
-
+        DateTime timestamp = await _cache.AddItemAsync(request.Key);
         return Ok(new AddResponse(request.Key, timestamp, _cache.Count));
     }
 
@@ -47,9 +44,9 @@ public class LRUCacheController : ControllerBase
     /// Returns 404 if the key is not in the cache.
     /// </summary>
     [HttpGet("{key:int}")]
-    public ActionResult<GetResponse> Get(int key)
+    public async Task<ActionResult<GetResponse>> Get(int key)
     {
-        DateTime? timestamp = _cache.Get(key);
+        DateTime? timestamp = await _cache.GetAsync(key);
 
         if (timestamp is null)
             return NotFound(new { message = $"Key {key} not found in cache." });
@@ -60,6 +57,7 @@ public class LRUCacheController : ControllerBase
     /// <summary>
     /// GET /api/cache/stats
     /// Returns current item count and configured capacity.
+    /// Count is a snapshot read — eventually consistent under high concurrency.
     /// </summary>
     [HttpGet("stats")]
     public ActionResult<StatsResponse> Stats()

@@ -206,3 +206,4 @@
 /Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2.Tests/obj/Debug/net8.0/Round2.Tests.pdb
 /Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2.Tests/obj/Debug/net8.0/Round2.Tests.genruntimeconfig.cache
 /Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2.Tests/obj/Debug/net8.0/ref/Round2.Tests.dll
+/Users/tejaswinikb/RiderProjects/Round2/LeastRecentlyUsedCache/Round2.Tests/obj/Debug/net8.0/Round2.Tests.sourcelink.json
