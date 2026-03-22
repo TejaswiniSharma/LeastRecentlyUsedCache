@@ -95,6 +95,10 @@ public class RateLimiterTests
         // AutoReplenishment is off, so the task stays pending indefinitely
         Assert.That(queuedTask.IsCompleted, Is.False,
             "Request should sit in the queue, not be resolved or rejected immediately.");
+
+        // Replenish to drain the pending task cleanly before the limiter is disposed
+        limiter.TryReplenish();
+        (await queuedTask).Dispose();
     }
 
     [Test]
