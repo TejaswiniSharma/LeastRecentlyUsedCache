@@ -1,0 +1,113 @@
+<html>
+<head>
+<title>TestRunner.cs</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #6c95eb;}
+.s1 { color: #d0d0d0;}
+.s2 { color: #bdbdbd;}
+.s3 { color: #85c46c; font-style: italic;}
+.s4 { color: #c9a26d;}
+.s5 { color: #ed94c0;}
+</style>
+</head>
+<body bgcolor="#191a1c">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+TestRunner.cs</font>
+</center></td></tr></table>
+<pre><span class="s0">namespace </span><span class="s1">Round2</span><span class="s2">.</span><span class="s1">Client</span><span class="s2">;</span>
+
+<span class="s3">/// &lt;summary&gt;</span>
+<span class="s3">/// Drives the LRU Cache server through a series of test scenarios,</span>
+<span class="s3">/// printing results to the console.</span>
+<span class="s3">/// &lt;/summary&gt;</span>
+<span class="s0">public static class </span><span class="s1">TestRunner</span>
+<span class="s2">{</span>
+    <span class="s0">public static </span><span class="s1">async Task RunAsync</span><span class="s2">(</span><span class="s1">LRUCacheClient client</span><span class="s2">)</span>
+    <span class="s2">{</span>
+        <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">&quot;╔══════════════════════════════════════════════════╗&quot;</span><span class="s2">);</span>
+        <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">&quot;║            LRU Cache  —  Test Runner             ║&quot;</span><span class="s2">);</span>
+        <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">&quot;╚══════════════════════════════════════════════════╝\n&quot;</span><span class="s2">);</span>
+
+        <span class="s3">// ── Scenario 1: Populate the cache ───────────────────────────────────</span>
+        <span class="s1">await Section</span><span class="s2">(</span><span class="s4">&quot;1. Add keys 1–10&quot;</span><span class="s2">);</span>
+
+        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">i </span><span class="s2">= </span><span class="s5">1</span><span class="s2">; </span><span class="s1">i </span><span class="s2">&lt;= </span><span class="s5">10</span><span class="s2">; </span><span class="s1">i</span><span class="s2">++)</span>
+        <span class="s2">{</span>
+            <span class="s1">AddResponse r </span><span class="s2">= </span><span class="s1">await client</span><span class="s2">.</span><span class="s1">AddAsync</span><span class="s2">(</span><span class="s1">i</span><span class="s2">);</span>
+            <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">$&quot;  ADD  key=</span><span class="s2">{</span><span class="s1">r</span><span class="s2">.</span><span class="s1">Key</span><span class="s2">,-</span><span class="s5">4</span><span class="s2">} </span><span class="s4">ts=</span><span class="s2">{</span><span class="s1">r</span><span class="s2">.</span><span class="s1">Timestamp:HH:mm:ss.fff</span><span class="s2">}  </span><span class="s4">count=</span><span class="s2">{</span><span class="s1">r</span><span class="s2">.</span><span class="s1">CurrentCount</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+        <span class="s2">}</span>
+
+        <span class="s1">await PrintStats</span><span class="s2">(</span><span class="s1">client</span><span class="s2">);</span>
+
+        <span class="s3">// ── Scenario 2: Read some keys (promotes to MRU) ─────────────────────</span>
+        <span class="s1">await Section</span><span class="s2">(</span><span class="s4">&quot;2. Read keys 1, 3, 5  (should promote them to MRU)&quot;</span><span class="s2">);</span>
+
+        <span class="s0">foreach </span><span class="s2">(</span><span class="s0">int </span><span class="s1">key </span><span class="s0">in new</span><span class="s2">[] { </span><span class="s5">1</span><span class="s2">, </span><span class="s5">3</span><span class="s2">, </span><span class="s5">5 </span><span class="s2">})</span>
+        <span class="s2">{</span>
+            <span class="s1">GetResponse? r </span><span class="s2">= </span><span class="s1">await client</span><span class="s2">.</span><span class="s1">GetAsync</span><span class="s2">(</span><span class="s1">key</span><span class="s2">);</span>
+            <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s1">r </span><span class="s0">is null</span>
+                <span class="s1">? </span><span class="s4">$&quot;  GET  key=</span><span class="s2">{</span><span class="s1">key</span><span class="s2">,-</span><span class="s5">4</span><span class="s2">} </span><span class="s4">→ MISS&quot;</span>
+                <span class="s1">: </span><span class="s4">$&quot;  GET  key=</span><span class="s2">{</span><span class="s1">key</span><span class="s2">,-</span><span class="s5">4</span><span class="s2">} </span><span class="s4">→ HIT   ts=</span><span class="s2">{</span><span class="s1">r</span><span class="s2">.</span><span class="s1">Timestamp:HH:mm:ss.fff</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+        <span class="s2">}</span>
+
+        <span class="s3">// ── Scenario 3: Cache miss ────────────────────────────────────────────</span>
+        <span class="s1">await Section</span><span class="s2">(</span><span class="s4">&quot;3. Read a key that was never added (key=99)&quot;</span><span class="s2">);</span>
+
+        <span class="s1">GetResponse? miss </span><span class="s2">= </span><span class="s1">await client</span><span class="s2">.</span><span class="s1">GetAsync</span><span class="s2">(</span><span class="s5">99</span><span class="s2">);</span>
+        <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s1">miss </span><span class="s0">is null </span><span class="s1">? </span><span class="s4">&quot;  GET  key=99  → MISS  (correct)&quot; </span><span class="s1">: </span><span class="s4">$&quot;  Unexpected hit: </span><span class="s2">{</span><span class="s1">miss</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+
+        <span class="s3">// ── Scenario 4: Add duplicate key (refresh) ───────────────────────────</span>
+        <span class="s1">await Section</span><span class="s2">(</span><span class="s4">&quot;4. Re-add key=2  (should refresh timestamp and move to MRU)&quot;</span><span class="s2">);</span>
+
+        <span class="s1">AddResponse refresh </span><span class="s2">= </span><span class="s1">await client</span><span class="s2">.</span><span class="s1">AddAsync</span><span class="s2">(</span><span class="s5">2</span><span class="s2">);</span>
+        <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">$&quot;  ADD  key=</span><span class="s2">{</span><span class="s1">refresh</span><span class="s2">.</span><span class="s1">Key</span><span class="s2">}  </span><span class="s4">ts=</span><span class="s2">{</span><span class="s1">refresh</span><span class="s2">.</span><span class="s1">Timestamp:HH:mm:ss.fff</span><span class="s2">}  </span><span class="s4">count=</span><span class="s2">{</span><span class="s1">refresh</span><span class="s2">.</span><span class="s1">CurrentCount</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+
+        <span class="s3">// ── Scenario 5: Fill to capacity then overflow ────────────────────────</span>
+        <span class="s3">// Server capacity is 100. We currently have 10 items. Add 90 more then</span>
+        <span class="s3">// one extra so eviction fires.</span>
+        <span class="s1">await Section</span><span class="s2">(</span><span class="s4">&quot;5. Fill cache to capacity (add keys 11–100), then add key=101 to trigger eviction&quot;</span><span class="s2">);</span>
+
+        <span class="s0">for </span><span class="s2">(</span><span class="s0">int </span><span class="s1">i </span><span class="s2">= </span><span class="s5">11</span><span class="s2">; </span><span class="s1">i </span><span class="s2">&lt;= </span><span class="s5">100</span><span class="s2">; </span><span class="s1">i</span><span class="s2">++)</span>
+            <span class="s1">await client</span><span class="s2">.</span><span class="s1">AddAsync</span><span class="s2">(</span><span class="s1">i</span><span class="s2">);</span>
+
+        <span class="s1">await PrintStats</span><span class="s2">(</span><span class="s1">client</span><span class="s2">);</span>
+
+        <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">&quot;  Adding key=101  → should evict the current LRU...&quot;</span><span class="s2">);</span>
+        <span class="s1">AddResponse overflow </span><span class="s2">= </span><span class="s1">await client</span><span class="s2">.</span><span class="s1">AddAsync</span><span class="s2">(</span><span class="s5">101</span><span class="s2">);</span>
+        <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">$&quot;  ADD  key=101  count=</span><span class="s2">{</span><span class="s1">overflow</span><span class="s2">.</span><span class="s1">CurrentCount</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+
+        <span class="s1">await PrintStats</span><span class="s2">(</span><span class="s1">client</span><span class="s2">);</span>
+
+        <span class="s3">// ── Scenario 6: Verify evicted key is gone ────────────────────────────</span>
+        <span class="s3">// LRU order after scenario 4: key=2 was refreshed (MRU), keys 1,3,5 were</span>
+        <span class="s3">// read (MRU side), remaining insertion order 4,6,7,8,9,10 → LRU is key=4.</span>
+        <span class="s1">await Section</span><span class="s2">(</span><span class="s4">&quot;6. Verify evicted key=4 is no longer in cache&quot;</span><span class="s2">);</span>
+
+        <span class="s1">GetResponse? evictedCheck </span><span class="s2">= </span><span class="s1">await client</span><span class="s2">.</span><span class="s1">GetAsync</span><span class="s2">(</span><span class="s5">4</span><span class="s2">);</span>
+        <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s1">evictedCheck </span><span class="s0">is null</span>
+            <span class="s1">? </span><span class="s4">&quot;  GET  key=4  → MISS  (evicted correctly)&quot;</span>
+            <span class="s1">: </span><span class="s4">$&quot;  GET  key=4  → HIT   ts=</span><span class="s2">{</span><span class="s1">evictedCheck</span><span class="s2">.</span><span class="s1">Timestamp:HH:mm:ss.fff</span><span class="s2">}  </span><span class="s4">(still in cache)&quot;</span><span class="s2">);</span>
+
+        <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">&quot;\n✓ Test run complete.&quot;</span><span class="s2">);</span>
+    <span class="s2">}</span>
+
+    <span class="s3">// ── helpers ───────────────────────────────────────────────────────────────</span>
+
+    <span class="s0">private static </span><span class="s1">Task Section</span><span class="s2">(</span><span class="s0">string </span><span class="s1">title</span><span class="s2">)</span>
+    <span class="s2">{</span>
+        <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">$&quot;\n── </span><span class="s2">{</span><span class="s1">title</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+        <span class="s0">return </span><span class="s1">Task</span><span class="s2">.</span><span class="s1">CompletedTask</span><span class="s2">;</span>
+    <span class="s2">}</span>
+
+    <span class="s0">private static </span><span class="s1">async Task PrintStats</span><span class="s2">(</span><span class="s1">LRUCacheClient client</span><span class="s2">)</span>
+    <span class="s2">{</span>
+        <span class="s1">StatsResponse s </span><span class="s2">= </span><span class="s1">await client</span><span class="s2">.</span><span class="s1">GetStatsAsync</span><span class="s2">();</span>
+        <span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">$&quot;  [stats]  count=</span><span class="s2">{</span><span class="s1">s</span><span class="s2">.</span><span class="s1">CurrentCount</span><span class="s2">}  </span><span class="s4">capacity=</span><span class="s2">{</span><span class="s1">s</span><span class="s2">.</span><span class="s1">Capacity</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+    <span class="s2">}</span>
+<span class="s2">}</span>
+</pre>
+</body>
+</html>

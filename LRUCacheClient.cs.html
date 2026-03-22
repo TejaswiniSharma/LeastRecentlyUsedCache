@@ -1,0 +1,87 @@
+<html>
+<head>
+<title>LRUCacheClient.cs</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #6c95eb;}
+.s1 { color: #d0d0d0;}
+.s2 { color: #bdbdbd;}
+.s3 { color: #85c46c; font-style: italic;}
+.s4 { color: #c9a26d;}
+</style>
+</head>
+<body bgcolor="#191a1c">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+LRUCacheClient.cs</font>
+</center></td></tr></table>
+<pre><span class="s0">using </span><span class="s1">System</span><span class="s2">.</span><span class="s1">Net</span><span class="s2">.</span><span class="s1">Http</span><span class="s2">.</span><span class="s1">Json</span><span class="s2">;</span>
+<span class="s0">using </span><span class="s1">System</span><span class="s2">.</span><span class="s1">Text</span><span class="s2">.</span><span class="s1">Json</span><span class="s2">;</span>
+
+<span class="s0">namespace </span><span class="s1">Round2</span><span class="s2">.</span><span class="s1">Client</span><span class="s2">;</span>
+
+<span class="s3">// ── Response models (mirror the server's) ────────────────────────────────────</span>
+
+<span class="s0">public </span><span class="s1">record AddResponse</span><span class="s2">(</span><span class="s0">int </span><span class="s1">Key</span><span class="s2">, </span><span class="s1">DateTime Timestamp</span><span class="s2">, </span><span class="s0">int </span><span class="s1">CurrentCount</span><span class="s2">);</span>
+<span class="s0">public </span><span class="s1">record GetResponse</span><span class="s2">(</span><span class="s0">int </span><span class="s1">Key</span><span class="s2">, </span><span class="s1">DateTime Timestamp</span><span class="s2">);</span>
+<span class="s0">public </span><span class="s1">record StatsResponse</span><span class="s2">(</span><span class="s0">int </span><span class="s1">CurrentCount</span><span class="s2">, </span><span class="s0">int </span><span class="s1">Capacity</span><span class="s2">);</span>
+
+<span class="s3">// ── Client ────────────────────────────────────────────────────────────────────</span>
+
+<span class="s3">/// &lt;summary&gt;</span>
+<span class="s3">/// Thin HTTP client that talks to the LRU Cache Web API running on localhost.</span>
+<span class="s3">/// The API key is attached to every request via the &lt;c&gt;X-Api-Key&lt;/c&gt; header.</span>
+<span class="s3">/// &lt;/summary&gt;</span>
+<span class="s0">public class </span><span class="s1">LRUCacheClient : IDisposable</span>
+<span class="s2">{</span>
+    <span class="s0">private readonly </span><span class="s1">HttpClient _http</span><span class="s2">;</span>
+
+    <span class="s0">private static readonly </span><span class="s1">JsonSerializerOptions JsonOptions </span><span class="s2">= </span><span class="s0">new</span><span class="s2">()</span>
+    <span class="s2">{</span>
+        <span class="s1">PropertyNameCaseInsensitive </span><span class="s2">= </span><span class="s0">true</span>
+    <span class="s2">};</span>
+
+    <span class="s0">public </span><span class="s1">LRUCacheClient</span><span class="s2">(</span><span class="s0">string </span><span class="s1">baseUrl</span><span class="s2">, </span><span class="s0">string </span><span class="s1">apiKey</span><span class="s2">)</span>
+    <span class="s2">{</span>
+        <span class="s1">_http </span><span class="s2">= </span><span class="s0">new </span><span class="s1">HttpClient </span><span class="s2">{ </span><span class="s1">BaseAddress </span><span class="s2">= </span><span class="s0">new </span><span class="s1">Uri</span><span class="s2">(</span><span class="s1">baseUrl</span><span class="s2">) };</span>
+        <span class="s3">// Set once — every request on this instance will carry the header</span>
+        <span class="s1">_http</span><span class="s2">.</span><span class="s1">DefaultRequestHeaders</span><span class="s2">.</span><span class="s1">Add</span><span class="s2">(</span><span class="s4">&quot;X-Api-Key&quot;</span><span class="s2">, </span><span class="s1">apiKey</span><span class="s2">);</span>
+    <span class="s2">}</span>
+
+    <span class="s3">/// &lt;summary&gt;POST /api/cache/add — adds a key to the cache.&lt;/summary&gt;</span>
+    <span class="s0">public </span><span class="s1">async Task</span><span class="s2">&lt;</span><span class="s1">AddResponse</span><span class="s2">&gt; </span><span class="s1">AddAsync</span><span class="s2">(</span><span class="s0">int </span><span class="s1">key</span><span class="s2">)</span>
+    <span class="s2">{</span>
+        <span class="s1">var response </span><span class="s2">= </span><span class="s1">await _http</span><span class="s2">.</span><span class="s1">PostAsJsonAsync</span><span class="s2">(</span><span class="s4">&quot;/api/cache/add&quot;</span><span class="s2">, </span><span class="s0">new </span><span class="s2">{ </span><span class="s1">key </span><span class="s2">});</span>
+        <span class="s1">response</span><span class="s2">.</span><span class="s1">EnsureSuccessStatusCode</span><span class="s2">();</span>
+        <span class="s0">return </span><span class="s2">(</span><span class="s1">await response</span><span class="s2">.</span><span class="s1">Content</span><span class="s2">.</span><span class="s1">ReadFromJsonAsync</span><span class="s2">&lt;</span><span class="s1">AddResponse</span><span class="s2">&gt;(</span><span class="s1">JsonOptions</span><span class="s2">))</span><span class="s1">!</span><span class="s2">;</span>
+    <span class="s2">}</span>
+
+    <span class="s3">/// &lt;summary&gt;</span>
+    <span class="s3">/// GET /api/cache/{key} — retrieves a key and promotes it to MRU.</span>
+    <span class="s3">/// Returns null on a cache miss.</span>
+    <span class="s3">/// &lt;/summary&gt;</span>
+    <span class="s0">public </span><span class="s1">async Task</span><span class="s2">&lt;</span><span class="s1">GetResponse?</span><span class="s2">&gt; </span><span class="s1">GetAsync</span><span class="s2">(</span><span class="s0">int </span><span class="s1">key</span><span class="s2">)</span>
+    <span class="s2">{</span>
+        <span class="s1">var response </span><span class="s2">= </span><span class="s1">await _http</span><span class="s2">.</span><span class="s1">GetAsync</span><span class="s2">(</span><span class="s4">$&quot;/api/cache/</span><span class="s2">{</span><span class="s1">key</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+
+        <span class="s0">if </span><span class="s2">(</span><span class="s1">response</span><span class="s2">.</span><span class="s1">StatusCode </span><span class="s2">== </span><span class="s1">System</span><span class="s2">.</span><span class="s1">Net</span><span class="s2">.</span><span class="s1">HttpStatusCode</span><span class="s2">.</span><span class="s1">NotFound</span><span class="s2">)</span>
+            <span class="s0">return null</span><span class="s2">;</span>
+
+        <span class="s1">response</span><span class="s2">.</span><span class="s1">EnsureSuccessStatusCode</span><span class="s2">();</span>
+        <span class="s0">return </span><span class="s1">await response</span><span class="s2">.</span><span class="s1">Content</span><span class="s2">.</span><span class="s1">ReadFromJsonAsync</span><span class="s2">&lt;</span><span class="s1">GetResponse</span><span class="s2">&gt;(</span><span class="s1">JsonOptions</span><span class="s2">);</span>
+    <span class="s2">}</span>
+
+    <span class="s3">/// &lt;summary&gt;GET /api/cache/stats — returns current count and capacity.&lt;/summary&gt;</span>
+    <span class="s0">public </span><span class="s1">async Task</span><span class="s2">&lt;</span><span class="s1">StatsResponse</span><span class="s2">&gt; </span><span class="s1">GetStatsAsync</span><span class="s2">()</span>
+    <span class="s2">{</span>
+        <span class="s1">var response </span><span class="s2">= </span><span class="s1">await _http</span><span class="s2">.</span><span class="s1">GetAsync</span><span class="s2">(</span><span class="s4">&quot;/api/cache/stats&quot;</span><span class="s2">);</span>
+        <span class="s1">response</span><span class="s2">.</span><span class="s1">EnsureSuccessStatusCode</span><span class="s2">();</span>
+        <span class="s0">return </span><span class="s2">(</span><span class="s1">await response</span><span class="s2">.</span><span class="s1">Content</span><span class="s2">.</span><span class="s1">ReadFromJsonAsync</span><span class="s2">&lt;</span><span class="s1">StatsResponse</span><span class="s2">&gt;(</span><span class="s1">JsonOptions</span><span class="s2">))</span><span class="s1">!</span><span class="s2">;</span>
+    <span class="s2">}</span>
+
+    <span class="s0">public void </span><span class="s1">Dispose</span><span class="s2">() </span><span class="s1">=&gt; _http</span><span class="s2">.</span><span class="s1">Dispose</span><span class="s2">();</span>
+<span class="s2">}</span>
+</pre>
+</body>
+</html>

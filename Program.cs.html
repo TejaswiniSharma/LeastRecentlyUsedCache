@@ -1,0 +1,59 @@
+<html>
+<head>
+<title>Program.cs</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #6c95eb;}
+.s1 { color: #d0d0d0;}
+.s2 { color: #bdbdbd;}
+.s3 { color: #85c46c; font-style: italic;}
+.s4 { color: #c9a26d;}
+.s5 { color: #ed94c0;}
+</style>
+</head>
+<body bgcolor="#191a1c">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+Program.cs</font>
+</center></td></tr></table>
+<pre><span class="s0">using </span><span class="s1">Round2</span><span class="s2">.</span><span class="s1">Client</span><span class="s2">;</span>
+
+<span class="s3">// ── Discover port ─────────────────────────────────────────────────────────────</span>
+<span class="s1">var portFile </span><span class="s2">= </span><span class="s1">Path</span><span class="s2">.</span><span class="s1">Combine</span><span class="s2">(</span><span class="s1">Path</span><span class="s2">.</span><span class="s1">GetTempPath</span><span class="s2">(), </span><span class="s4">&quot;lrucache_server.port&quot;</span><span class="s2">);</span>
+<span class="s1">var keyFile  </span><span class="s2">= </span><span class="s1">Path</span><span class="s2">.</span><span class="s1">Combine</span><span class="s2">(</span><span class="s1">Path</span><span class="s2">.</span><span class="s1">GetTempPath</span><span class="s2">(), </span><span class="s4">&quot;lrucache_server.apikey&quot;</span><span class="s2">);</span>
+
+<span class="s0">if </span><span class="s2">(</span><span class="s1">!File</span><span class="s2">.</span><span class="s1">Exists</span><span class="s2">(</span><span class="s1">portFile</span><span class="s2">) || </span><span class="s1">!File</span><span class="s2">.</span><span class="s1">Exists</span><span class="s2">(</span><span class="s1">keyFile</span><span class="s2">))</span>
+<span class="s2">{</span>
+    <span class="s1">Console</span><span class="s2">.</span><span class="s1">Error</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">&quot;ERROR: Server discovery files not found.&quot;</span><span class="s2">);</span>
+    <span class="s1">Console</span><span class="s2">.</span><span class="s1">Error</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">$&quot;  Expected: </span><span class="s2">{</span><span class="s1">portFile</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+    <span class="s1">Console</span><span class="s2">.</span><span class="s1">Error</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">$&quot;  Expected: </span><span class="s2">{</span><span class="s1">keyFile</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+    <span class="s1">Console</span><span class="s2">.</span><span class="s1">Error</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">&quot;Make sure the Round2 server is running first:&quot;</span><span class="s2">);</span>
+    <span class="s1">Console</span><span class="s2">.</span><span class="s1">Error</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">&quot;  dotnet run --project Round2&quot;</span><span class="s2">);</span>
+    <span class="s0">return</span><span class="s2">;</span>
+<span class="s2">}</span>
+
+<span class="s1">var port      </span><span class="s2">= </span><span class="s0">int</span><span class="s2">.</span><span class="s1">Parse</span><span class="s2">((</span><span class="s1">await File</span><span class="s2">.</span><span class="s1">ReadAllTextAsync</span><span class="s2">(</span><span class="s1">portFile</span><span class="s2">)).</span><span class="s1">Trim</span><span class="s2">());</span>
+<span class="s1">var apiKey    </span><span class="s2">= (</span><span class="s1">await File</span><span class="s2">.</span><span class="s1">ReadAllTextAsync</span><span class="s2">(</span><span class="s1">keyFile</span><span class="s2">)).</span><span class="s1">Trim</span><span class="s2">();</span>
+<span class="s1">var serverUrl </span><span class="s2">= </span><span class="s4">$&quot;http://localhost:</span><span class="s2">{</span><span class="s1">port</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">;</span>
+
+<span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">$&quot;Connecting to LRU Cache server at </span><span class="s2">{</span><span class="s1">serverUrl</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+<span class="s1">Console</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">$&quot;Using API key: </span><span class="s2">{</span><span class="s1">apiKey</span><span class="s2">[</span><span class="s1">..</span><span class="s5">8</span><span class="s2">]}</span><span class="s4">...</span><span class="s2">{</span><span class="s1">apiKey</span><span class="s2">[^</span><span class="s5">4</span><span class="s1">..</span><span class="s2">]}  </span><span class="s4">(</span><span class="s2">{</span><span class="s1">apiKey</span><span class="s2">.</span><span class="s1">Length</span><span class="s2">} </span><span class="s4">chars)\n&quot;</span><span class="s2">);</span>
+
+<span class="s0">using </span><span class="s1">var client </span><span class="s2">= </span><span class="s0">new </span><span class="s1">LRUCacheClient</span><span class="s2">(</span><span class="s1">serverUrl</span><span class="s2">, </span><span class="s1">apiKey</span><span class="s2">);</span>
+
+<span class="s3">// Quick connectivity check</span>
+<span class="s0">try</span>
+<span class="s2">{</span>
+    <span class="s1">await client</span><span class="s2">.</span><span class="s1">GetStatsAsync</span><span class="s2">();</span>
+<span class="s2">}</span>
+<span class="s0">catch </span><span class="s2">(</span><span class="s1">HttpRequestException ex</span><span class="s2">)</span>
+<span class="s2">{</span>
+    <span class="s1">Console</span><span class="s2">.</span><span class="s1">Error</span><span class="s2">.</span><span class="s1">WriteLine</span><span class="s2">(</span><span class="s4">$&quot;ERROR: Cannot reach the server — </span><span class="s2">{</span><span class="s1">ex</span><span class="s2">.</span><span class="s1">Message</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s2">);</span>
+    <span class="s0">return</span><span class="s2">;</span>
+<span class="s2">}</span>
+
+<span class="s1">await TestRunner</span><span class="s2">.</span><span class="s1">RunAsync</span><span class="s2">(</span><span class="s1">client</span><span class="s2">);</span>
+</pre>
+</body>
+</html>
