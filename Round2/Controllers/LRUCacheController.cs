@@ -11,7 +11,13 @@ public record AddResponse(int Key, DateTime Timestamp, int CurrentCount);
 
 public record GetResponse(int Key, DateTime Timestamp);
 
-public record StatsResponse(int CurrentCount, int Capacity);
+public record StatsResponse(
+    int    CurrentCount,
+    int    Capacity,
+    long   HitCount,
+    long   MissCount,
+    long   EvictionCount,
+    double HitRatePct);      // 0–100, rounded to 2 dp
 
 // ── Controller ───────────────────────────────────────────────────────────────
 
@@ -58,12 +64,18 @@ public class LRUCacheController : ControllerBase
 
     /// <summary>
     /// GET /api/cache/stats
-    /// Returns current item count and configured capacity.
-    /// Count is a snapshot read — eventually consistent under high concurrency.
+    /// Returns current count, capacity, and lifetime hit/miss/eviction counters.
+    /// All values are snapshot reads — eventually consistent under high concurrency.
     /// </summary>
     [HttpGet("stats")]
     public ActionResult<StatsResponse> Stats()
     {
-        return Ok(new StatsResponse(_cache.Count, _cache.Capacity));
+        return Ok(new StatsResponse(
+            CurrentCount:  _cache.Count,
+            Capacity:      _cache.Capacity,
+            HitCount:      _cache.HitCount,
+            MissCount:     _cache.MissCount,
+            EvictionCount: _cache.EvictionCount,
+            HitRatePct:    Math.Round(_cache.HitRate * 100, 2)));
     }
 }

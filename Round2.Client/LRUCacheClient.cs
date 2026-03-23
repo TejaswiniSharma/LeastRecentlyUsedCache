@@ -7,7 +7,13 @@ namespace Round2.Client;
 
 public record AddResponse(int Key, DateTime Timestamp, int CurrentCount);
 public record GetResponse(int Key, DateTime Timestamp);
-public record StatsResponse(int CurrentCount, int Capacity);
+public record StatsResponse(
+    int    CurrentCount,
+    int    Capacity,
+    long   HitCount,
+    long   MissCount,
+    long   EvictionCount,
+    double HitRatePct);
 
 // ── Client ────────────────────────────────────────────────────────────────────
 
@@ -54,12 +60,19 @@ public class LRUCacheClient : IDisposable
         return await response.Content.ReadFromJsonAsync<GetResponse>(JsonOptions);
     }
 
-    /// <summary>GET /api/cache/stats — returns current count and capacity.</summary>
+    /// <summary>GET /api/cache/stats — returns count, capacity and lifetime metrics.</summary>
     public async Task<StatsResponse> GetStatsAsync()
     {
         var response = await _http.GetAsync("/api/cache/stats");
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<StatsResponse>(JsonOptions))!;
+    }
+
+    /// <summary>GET /health — returns server health status as a JSON string (no auth required).</summary>
+    public async Task<string> GetHealthAsync()
+    {
+        var response = await _http.GetAsync("/health");
+        return await response.Content.ReadAsStringAsync();
     }
 
     public void Dispose() => _http.Dispose();

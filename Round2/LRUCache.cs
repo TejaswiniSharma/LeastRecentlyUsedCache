@@ -44,6 +44,25 @@ public class LRUCache : IDisposable
     public int Count    => _map.Count;
     public int Capacity => _capacity;
 
+    // ── Metrics (guarded by the same semaphore — no extra locking needed) ─────
+    private long _hitCount;
+    private long _missCount;
+    private long _evictionCount;
+
+    public long   HitCount      => _hitCount;
+    public long   MissCount     => _missCount;
+    public long   EvictionCount => _evictionCount;
+
+    /// <summary>Cache hit rate as a ratio 0.0–1.0. Returns 0 when no Get calls made yet.</summary>
+    public double HitRate
+    {
+        get
+        {
+            var total = _hitCount + _missCount;
+            return total == 0 ? 0.0 : (double)_hitCount / total;
+        }
+    }
+
     public LRUCache(int capacity = 100, Func<DateTime>? clock = null)
     {
         if (capacity <= 0)
@@ -122,8 +141,12 @@ public class LRUCache : IDisposable
     private DateTime? GetCore(int key)
     {
         if (!_map.TryGetValue(key, out Node? node))
+        {
+            _missCount++;
             return null;
+        }
 
+        _hitCount++;
         MoveToFront(node);
         return node.Value;
     }
@@ -157,6 +180,7 @@ public class LRUCache : IDisposable
 
         Detach(lru);
         _map.Remove(lru.Key);
+        _evictionCount++;
 
         Console.WriteLine($"[LRUCache] Evicted key={lru.Key} (last used: {lru.Value:O})");
     }

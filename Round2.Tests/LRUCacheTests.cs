@@ -289,6 +289,118 @@ public class LRUCacheTests
             "Count must never exceed capacity regardless of concurrency.");
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Metrics
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    [Test]
+    public void Metrics_InitialValues_AreAllZero()
+    {
+        var cache = MakeCache();
+
+        Assert.That(cache.HitCount,      Is.EqualTo(0));
+        Assert.That(cache.MissCount,     Is.EqualTo(0));
+        Assert.That(cache.EvictionCount, Is.EqualTo(0));
+        Assert.That(cache.HitRate,       Is.EqualTo(0.0));
+    }
+
+    [Test]
+    public async Task Metrics_GetHit_IncrementsHitCount()
+    {
+        var cache = MakeCache();
+        await cache.AddItemAsync(1);
+
+        await cache.GetAsync(1); // hit
+
+        Assert.That(cache.HitCount,  Is.EqualTo(1), "One hit must be recorded.");
+        Assert.That(cache.MissCount, Is.EqualTo(0), "No miss should be recorded.");
+    }
+
+    [Test]
+    public async Task Metrics_GetMiss_IncrementsMissCount()
+    {
+        var cache = MakeCache();
+
+        await cache.GetAsync(999); // miss — key never added
+
+        Assert.That(cache.HitCount,  Is.EqualTo(0), "No hit should be recorded.");
+        Assert.That(cache.MissCount, Is.EqualTo(1), "One miss must be recorded.");
+    }
+
+    [Test]
+    public async Task Metrics_Eviction_IncrementsEvictionCount()
+    {
+        var cache = MakeCache(capacity: 2);
+
+        await cache.AddItemAsync(1);
+        await cache.AddItemAsync(2);
+        await cache.AddItemAsync(3); // triggers eviction of key 1
+
+        Assert.That(cache.EvictionCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task Metrics_MultipleEvictions_CountIsAccurate()
+    {
+        var cache = MakeCache(capacity: 2);
+
+        await cache.AddItemAsync(1);
+        await cache.AddItemAsync(2);
+        await cache.AddItemAsync(3); // evicts 1
+        await cache.AddItemAsync(4); // evicts 2
+
+        Assert.That(cache.EvictionCount, Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task Metrics_HitRate_CalculatedCorrectly()
+    {
+        var cache = MakeCache();
+        await cache.AddItemAsync(1);
+
+        await cache.GetAsync(1);   // hit
+        await cache.GetAsync(1);   // hit
+        await cache.GetAsync(999); // miss
+
+        // 2 hits / 3 total = 66.67 %
+        Assert.That(cache.HitRate, Is.EqualTo(2.0 / 3.0).Within(0.001));
+    }
+
+    [Test]
+    public void Metrics_HitRate_IsZeroWhenNoGets()
+    {
+        var cache = MakeCache();
+
+        // Must return 0, not NaN or throw DivideByZeroException
+        Assert.That(cache.HitRate, Is.EqualTo(0.0),
+            "HitRate must be 0.0 (not NaN) before any Get calls.");
+    }
+
+    [Test]
+    public async Task Metrics_AllHits_HitRateIsOne()
+    {
+        var cache = MakeCache();
+        await cache.AddItemAsync(1);
+
+        await cache.GetAsync(1);
+        await cache.GetAsync(1);
+        await cache.GetAsync(1);
+
+        Assert.That(cache.HitRate, Is.EqualTo(1.0));
+    }
+
+    [Test]
+    public async Task Metrics_AllMisses_HitRateIsZero()
+    {
+        var cache = MakeCache();
+
+        await cache.GetAsync(1);
+        await cache.GetAsync(2);
+        await cache.GetAsync(3);
+
+        Assert.That(cache.HitRate, Is.EqualTo(0.0));
+    }
+
     [Test]
     public async Task Concurrent_MixedAddAndGet_NoExceptionThrown()
     {

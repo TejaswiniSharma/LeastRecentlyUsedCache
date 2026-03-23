@@ -1,11 +1,18 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Round2;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddSingleton(new LRUCache(capacity: 100));
+
+// ── Health checks ─────────────────────────────────────────────────────────────
+builder.Services.AddHealthChecks()
+    .AddCheck<LRUCacheHealthCheck>("lrucache");
 
 // Port 0 → OS assigns the next available port automatically
 builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -55,10 +62,34 @@ await File.WriteAllTextAsync(keyFile, apiKey);
 Console.WriteLine($"[Server] API key written to  {keyFile}");
 
 // Middleware order matters:
-//  1. ApiKeyMiddleware  — reject unauthenticated requests before they hit the limiter
-//  2. UseRateLimiter    — apply per-client token bucket to authenticated requests
-//  3. MapControllers    — route to controller actions
-app.UseMiddleware<ApiKeyMiddleware>(apiKey);
+//  1. /health  — no auth, no rate limit (load balancers need unauthenticated access)
+//  2. ApiKeyMiddleware  — reject unauthenticated requests before the limiter
+//  3. UseRateLimiter    — per-client token bucket for authenticated requests
+//  4. MapControllers    — route to controller actions
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (ctx, report) =>
+    {
+        ctx.Response.ContentType = "application/json";
+        await ctx.Response.WriteAsync(JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(e => new
+            {
+                name   = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                data   = e.Value.Data
+            })
+        }, new JsonSerializerOptions { WriteIndented = true }));
+    }
+});
+
+// Apply API key check to every route EXCEPT /health
+app.UseWhen(
+    ctx => !ctx.Request.Path.StartsWithSegments("/health"),
+    branch => branch.UseMiddleware<ApiKeyMiddleware>(apiKey));
+
 app.UseRateLimiter();
 app.MapControllers();
 
